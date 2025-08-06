@@ -1,0 +1,50 @@
+{
+	"landTables": ["空闲地块", "征收搬迁地块"],
+	"allNeedTables": [
+		{
+			"name": "gspoi",
+			"columns": []
+		},
+		{
+			"name": "大运河遗产段_缓冲区",
+			"columns": []
+		},
+		{
+			"name": "城市道路_合并",
+			"columns": []
+		},
+		{
+			"name": "gc_古城区",
+			"columns": []
+		},
+		{
+			"name": "jf32_控规数据",
+			"columns": []
+		},
+		{
+			"name": "控制性详细规划",
+			"columns": []
+		},
+		{
+			"name": "历史城区",
+			"columns": []
+		},
+		{
+			"name": "历史地段",
+			"columns": []
+		},
+		{
+			"name": "社区网格_2506",
+			"columns": []
+		},
+		{
+			"name": "gc_历史文化街区",
+			"columns": []
+		},
+		{
+			"name": "文保单位控保单位",
+			"columns": []
+		}
+	],
+	"excludeColumn": ["shape"]
+}
