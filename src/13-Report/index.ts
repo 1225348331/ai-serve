@@ -43,7 +43,6 @@ builder.addNode(
 
 {fileParse}
 		`);
-
 		const llm = getLLM();
 
 		const chain = systemPrompt.pipe(llm).pipe(new StringOutputParser());
@@ -86,7 +85,7 @@ builder.addNode(
 
 		message += `
 
-[用地评价报告word版](http://localhost:3300/${fileName}.docx)
+[用地评价报告word版](${process.env.FILEADDRESS}/${fileName}.docx)
 		`;
 
 		return {

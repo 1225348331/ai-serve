@@ -42,10 +42,10 @@ async function insertKnowledgeClassificationName(cnname: string): Promise<string
 		const enname = `${namePinyin}_${timestamp}`;
 
 		// 3. 插入到数据库
-		await client.query('INSERT INTO knowledgeclassification (cnname, name) VALUES ($1, $2)', [cnname, cnname]);
+		await client.query('INSERT INTO knowledgeclassification (cnname, name) VALUES ($1, $2)', [cnname, enname]);
 
 		// 4. 返回生成的英文名称
-		return cnname;
+		return enname;
 	} catch (error) {
 		// 错误处理
 		console.error('插入知识库分类失败:', error);

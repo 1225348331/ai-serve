@@ -1,0 +1,28 @@
+{
+	// 设置每行代码的最大字符数为120
+	"printWidth": 120,
+	// 设置一个制表符等于2个空格
+	"tabWidth": 2,
+	// 使用空格而不是制表符缩进代码
+	"useTabs": true,
+	// 在语句结尾添加分号
+	"semi": true,
+	// 使用单引号而不是双引号
+	"singleQuote": true,
+	// 不在对象或数组的最后一项后添加逗号
+	"trailingComma": "none",
+	// 在对象字面量的大括号之间添加空格
+	"bracketSpacing": true,
+	// 将对象字面量的大括号放在同一行
+	"bracketSameLine": true,
+	// 在箭头函数参数周围总是添加括号
+	"arrowParens": "always",
+	// 忽略HTML中的空白敏感度
+	"htmlWhitespaceSensitivity": "ignore",
+	// 在Vue文件中，不要将script和style标签的内容缩进
+	"vueIndentScriptAndStyle": false,
+	// 根据文件内容自动检测行尾符
+	"endOfLine": "auto",
+	// 不强制每个属性或元素必须单独占一行
+	"singleAttributePerLine": false
+}

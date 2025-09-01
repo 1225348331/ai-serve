@@ -111,7 +111,7 @@ export const robotChatGenerateWord = async (options: RobotChatOptions) => {
 
 	message += `
 	
-[报告下载链接](http://localhost:3300/${fileName})
+[报告下载链接](${process.env.FILEADDRESS}/${fileName})
 	
 	`;
 
@@ -133,3 +133,4 @@ export const robotChatGenerateWord = async (options: RobotChatOptions) => {
 export default {
 	robotChatGenerateWord,
 };
+ 

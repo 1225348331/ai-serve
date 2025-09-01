@@ -1,5 +1,5 @@
 {
-	"landTables": ["空闲地块", "征收搬迁地块"],
+	"landTables": ["空闲地块", "征收搬迁地块", "影像识别空闲地块"],
 	"allNeedTables": [
 		{
 			"name": "gspoi",

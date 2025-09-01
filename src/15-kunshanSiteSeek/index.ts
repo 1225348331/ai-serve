@@ -49,6 +49,7 @@ builder.addNode(
 				.describe('地块表名'),
 			reason: z.string().describe('请准确说明提取理由'),
 		});
+		
 		const prompt = ChatPromptTemplate.fromTemplate(`
 ## 任务说明
 你是一个专业的数据提取助手，需要从用户问题中准确识别并提取涉及的地块表名称。
@@ -357,6 +358,6 @@ builder.addEdge('sql迭代修复' as start, '判断是否需要迭代' as end);
 builder.addEdge('数据库查询结果' as start, 'AI回复' as end);
 builder.addEdge('AI回复' as start, '__end__');
 
-const SiteSeekAgent = builder.compile();
+const KunshanSiteSeekAgent = builder.compile();
 
-export { SiteSeekAgent };
+export { KunshanSiteSeekAgent };

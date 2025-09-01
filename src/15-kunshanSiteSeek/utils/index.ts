@@ -85,6 +85,7 @@ export const text2sqlStream = async (question: string, landTable: string) => {
 	// 获取所有表名
 	const allTableName = data.landTables
 		.filter((item) => item == landTable)
+		// @ts-ignore
 		.concat(data.allNeedTables.map((item) => item.name));
 	// db
 	const db = await pool.connect();
@@ -216,6 +217,7 @@ export const recoverSqlStream = async (sql: string, error: string, landTable: st
 	// 获取所有表名
 	const allTableName = data.landTables
 		.filter((item) => item == landTable)
+		// @ts-ignore
 		.concat(data.allNeedTables.map((item) => item.name));
 	// db
 	const db = await pool.connect();
@@ -256,6 +258,7 @@ SQL语句：
 	return await recoverSqlChain.stream({ sql, error, tableInfo, question });
 };
 
+// 将number转为2位小数
 export function formatNumberToTwoDecimals(obj: Record<string, string | number | null>) {
 	const formattedObj = { ...obj };
 

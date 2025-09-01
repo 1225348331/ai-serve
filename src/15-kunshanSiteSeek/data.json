@@ -1,0 +1,5 @@
+{
+	"landTables": ["选址_供而未建", "选址_可用产业用地", "选址_批而未供", "选址_收回收购"],
+	"allNeedTables": [],
+	"excludeColumn": ["shape"]
+}

@@ -134,9 +134,9 @@ builder.addNode(
 
 		message += `
 
-[政策文件报告word版](http://localhost:3300/${fileName}.docx)
+[政策文件报告word版](${process.env.FILEADDRESS}/${fileName}.docx)
 
-[政策文件报告excel版](http://localhost:3300/${fileName}.xlsx)
+[政策文件报告excel版](${process.env.FILEADDRESS}/${fileName}.xlsx)
 		`;
 
 		return {

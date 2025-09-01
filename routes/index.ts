@@ -17,8 +17,15 @@ import { policyAnalysisAgent } from '../src/10-PolicyAnalysis';
 import { HeatmapAnalysisAgent } from '../src/11-HeatmapAnalysis';
 import { KunShanAgent } from '../src/12-kunshan';
 import { reportAgent } from '../src/13-Report';
+import { geocode } from './geocode';
+import path from 'path';
+import fs from 'fs/promises';
+import { rentAgent } from '../src/14-RentChat';
+import { KunshanSiteSeekAgent } from '../src/15-kunshanSiteSeek';
+import { fileParse } from '../utils/AI/FileParse';
 
 const router = express.Router();
+const rentJsonPath = path.join(__dirname, './rent.json');
 
 // 首页路由
 router.get('/', (req, res) => {
@@ -26,7 +33,51 @@ router.get('/', (req, res) => {
 });
 
 // 文件上传接口
-router.post('/upload', fileUploadMiddleware, (req: Request, res: Response) => {
+router.post('/upload', fileUploadMiddleware, async (req: Request, res: Response) => {
+	if (req.fields && req.fields.rent) {
+		const geocodePromise = req.files?.map((item) => {
+			return geocode(item.filename);
+		})!;
+		const geocodeData = await Promise.all(geocodePromise);
+
+		if (geocodeData.some((item) => !item?.location?.lng)) {
+			res.status(200).json({
+				code: 500,
+				data: '文件名不存在地址信息',
+			});
+			return;
+		}
+
+		// 追加数据到 rent.json
+		try {
+			// 先读取现有数据
+			let existingData: { filename: string }[] = [];
+			try {
+				const data = await fs.readFile(rentJsonPath, 'utf8');
+				existingData = JSON.parse(data);
+			} catch (readError) {
+				// 如果文件不存在或为空，则使用空数组
+				console.log('创建新的 rent.json 文件或读取现有文件时出错，将创建新文件');
+			}
+
+			existingData = existingData.filter((item) => !req.files?.map((file) => file.filename)?.includes(item.filename));
+
+			// 将新数据追加到现有数据中
+			const updatedData = [...existingData, ...geocodeData];
+
+			// 写入更新后的数据
+			await fs.writeFile(rentJsonPath, JSON.stringify(updatedData, null, 2), 'utf8');
+
+			console.log('geocodeData 已成功追加到 rent.json');
+		} catch (writeError) {
+			console.error('写入文件时出错:', writeError);
+			res.json({
+				code: 500,
+				data: `写入文件时出错:${writeError}`,
+			});
+			throw writeError; // 重新抛出错误以便外层 catch 捕获
+		}
+	}
 	res.json({
 		success: true,
 		message: '文件上传成功',
@@ -444,10 +495,15 @@ router.post('/site-seek', async (req, res) => {
 	}
 	const sseControl = new SSEControl(res);
 	try {
-		const data = await SiteSeekAgent.invoke({
-			question: userContent[0].value,
-			SSE: sseControl,
-		});
+		const data = await SiteSeekAgent.invoke(
+			{
+				question: userContent[0].value,
+				SSE: sseControl,
+			},
+			{
+				recursionLimit: 50,
+			}
+		);
 		await addMessage(id, 'user', userContent, userContent);
 		await addMessage(id, 'assistant', data.nodeResult, data.nodeResult);
 	} catch (error) {
@@ -634,6 +690,158 @@ router.post('/report-analysis', async (req, res) => {
 			userContent: userContent,
 			SSE: sseControl,
 		});
+	} catch (error) {
+	} finally {
+		sseControl.endSSE();
+	}
+});
+
+/** 租金评估文件列表 */
+router.get('/rentFileList', async (req, res) => {
+	const data = await fs.readFile(rentJsonPath, 'utf8');
+	const existingData = JSON.parse(data);
+
+	res.json({
+		code: 200,
+		data: (existingData as { filename: string; content?: string }[]).map((item) => {
+			return {
+				filename: item.filename,
+				status: item.content ? (item.content != '解析失败' ? 'success' : 'failed') : 'waiting',
+			};
+		}),
+	});
+});
+
+/** 租金评估文件删除接口 */
+router.post('/rentFileDelete', async (req, res) => {
+	try {
+		const { filename } = req.body;
+
+		// 验证文件名是否存在
+		if (!filename) {
+			res.status(200).json({
+				code: 500,
+				message: '文件名不能为空',
+			});
+			return;
+		}
+
+		// 读取现有数据
+		const data = await fs.readFile(rentJsonPath, 'utf8');
+		const existingData = JSON.parse(data) as { filename: string }[];
+
+		// 检查文件是否存在
+		const fileIndex = existingData.findIndex((item) => item.filename === filename);
+		if (fileIndex === -1) {
+			res.json({
+				code: 500,
+				message: '文件不存在',
+			});
+			return;
+		}
+
+		// 从数组中删除文件记录
+		existingData.splice(fileIndex, 1);
+
+		// 写回更新后的数据
+		await fs.writeFile(rentJsonPath, JSON.stringify(existingData, null, 2));
+
+		res.json({
+			code: 200,
+			message: '文件删除成功',
+			data: filename,
+		});
+	} catch (error) {
+		console.error('删除文件时出错:', error);
+		res.status(500).json({
+			code: 500,
+			message: '服务器内部错误',
+		});
+	}
+});
+
+/** 租金文件解析 */
+router.post('/rentFileParse', async (req, res) => {
+	const { filename } = req.body;
+	const data = await fs.readFile(rentJsonPath, 'utf-8');
+	const rentData = destr(data) as { filename: string; content: string }[];
+	const hasFile = rentData.some((item) => item.filename == filename);
+	if (hasFile) {
+		res.json({
+			code: 200,
+			data: '已检测到文件,开始执行OCR任务',
+		});
+		fileParse(filename)
+			.then(async (content) => {
+				const fileData = await fs.readFile(rentJsonPath, 'utf-8');
+				const rentData = destr(fileData) as { filename: string; content: string }[];
+				rentData.forEach((item) => {
+					if (item.filename == filename) {
+						item.content = content;
+					}
+				});
+				await fs.writeFile(rentJsonPath, JSON.stringify(rentData, null, 2), 'utf8');
+			})
+			.catch(async () => {
+				const fileData = await fs.readFile(rentJsonPath, 'utf-8');
+				const rentData = destr(fileData) as { filename: string; content: string }[];
+				rentData.forEach((item) => {
+					if (item.filename == filename) {
+						item.content = '解析失败';
+					}
+				});
+				await fs.writeFile(rentJsonPath, JSON.stringify(rentData, null, 2), 'utf8');
+			});
+	} else {
+		res.json({
+			code: 500,
+			data: '未检测到文件',
+		});
+	}
+});
+
+/** 租金评估 */
+router.post('/rent-analysis', async (req, res) => {
+	const { userContent, id } = req.body;
+	if (!userContent || !id) {
+		res.status(500).json('必填参数不能为空');
+		return;
+	}
+	const sseControl = new SSEControl(res);
+
+	try {
+		const data = await rentAgent.invoke({
+			userContent,
+			SSE: sseControl,
+		});
+		await addMessage(id, 'user', userContent, userContent);
+		await addMessage(id, 'assistant', data.nodeResult, data.nodeResult);
+	} catch (error) {
+	} finally {
+		sseControl.endSSE();
+	}
+});
+
+/** 昆山选址推荐 */
+router.post('/kunshan-site-seek', async (req, res) => {
+	const { userContent, id } = req.body;
+	if (!userContent || !id) {
+		res.status(500).json('必填参数不能为空');
+		return;
+	}
+	const sseControl = new SSEControl(res);
+	try {
+		const data = await KunshanSiteSeekAgent.invoke(
+			{
+				question: userContent[0].value,
+				SSE: sseControl,
+			},
+			{
+				recursionLimit: 50,
+			}
+		);
+		await addMessage(id, 'user', userContent, userContent);
+		await addMessage(id, 'assistant', data.nodeResult, data.nodeResult);
 	} catch (error) {
 	} finally {
 		sseControl.endSSE();

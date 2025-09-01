@@ -37,7 +37,7 @@ export class SSEControl {
 	}
 
 	sendData(data: any): void {
-		this.res.write(`data: ${JSON.stringify(data)}\n\n`); // SSE 格式
+		this.res.write(`data:${JSON.stringify(data)}\n\n`);
 	}
 
 	endSSE(): void {

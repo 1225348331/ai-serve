@@ -26,7 +26,7 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
 	} catch (error) {
 		next(error);
 	}
-});
+}); 
 
 /** 获取知识库分类 */
 router.get(
@@ -213,7 +213,7 @@ router.post('/chat', async (req, res) => {
 	}
 });
 
-// 获取知识库文件
+/** 获取知识库文件解析结果 */
 router.get('/fileContent', async (req, res) => {
 	const { fileName } = req.query;
 	const content = await fileParse(fileName as string);
