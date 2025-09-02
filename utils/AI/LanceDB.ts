@@ -2,7 +2,6 @@ import lancedb from '@lancedb/lancedb';
 import * as arrow from 'apache-arrow';
 import path from 'path';
 import { EmbeddingConfig, EmbeddingTool } from './Embedding';
-import { waitForDebugger } from 'inspector';
 
 const dbDir = path.join(__dirname, '../../lancedb');
 
@@ -11,6 +10,7 @@ const embeddingTool = new EmbeddingTool();
 export class VectorDB {
 	db?: lancedb.Connection;
 	table?: lancedb.Table;
+	processFiles: Map<string, string[]> = new Map();
 
 	constructor() {}
 
@@ -36,7 +36,7 @@ export class VectorDB {
 	}
 
 	async initTable(tableName: string, embeddingsDimensions = EmbeddingConfig.embeddingsDimensions) {
-		console.log(tableName)
+		console.log(tableName);
 		try {
 			if (!this.db) await this.initdb();
 			if (this.db) {
@@ -125,6 +125,9 @@ export class VectorDB {
 		try {
 			const embeddings = await embeddingTool.embeddingFile(fileName);
 			await this.insertVector(tableName, embeddings as IChunkVectorData[]);
+			// if (this.processFiles.includes(fileName)) {
+			// 	this.processFiles = this.processFiles.filter((item) => item != fileName);
+			// }
 			console.log(fileName, '嵌入成功');
 		} catch (error) {
 			throw new Error(`嵌入文件 ${fileName} 失败: ${error instanceof Error ? error.message : String(error)}`);
@@ -136,10 +139,21 @@ export class VectorDB {
 			if (!this.db) this.db = await this.initdb();
 			this.table = await this.db.openTable(tableName);
 			const fileName = await this.table.query().select(['file_name']).toArray();
-			const uniqueFilenames = [...new Set(fileName.map((row) => row.file_name))];
+			let uniqueFilenames = [...new Set(fileName.map((row) => row.file_name))];
+			const files = this.processFiles.get(tableName);
+			if (files) uniqueFilenames = uniqueFilenames.concat(...files);
 			return uniqueFilenames;
 		} catch (error) {
 			throw new Error(`查询文件列表失败: ${error instanceof Error ? error.message : String(error)}`);
 		}
+	}
+
+	processFile(tableName: string, fileName: string) {
+		// 获取现有数组或创建一个新数组
+		const fileList = this.processFiles.get(tableName) || [];
+		// 添加新文件名
+		fileList.push(fileName);
+		// 更新Map
+		this.processFiles.set(tableName, fileList);
 	}
 }

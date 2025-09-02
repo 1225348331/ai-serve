@@ -26,7 +26,7 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
 	} catch (error) {
 		next(error);
 	}
-}); 
+});
 
 /** 获取知识库分类 */
 router.get(
@@ -75,38 +75,47 @@ router.post(
 			});
 		}
 
-		const promisesArr = (fileNames as string[]).map((fileName) => {
-			return new Promise<{ fileName: string; status: boolean; error?: string }>(async (resolve) => {
-				try {
-					await db.insertFile(tableName, fileName);
-					resolve({ fileName, status: true });
-				} catch (error) {
-					console.error(`Error embedding file ${fileName}:`, error);
-					resolve({
-						fileName,
-						status: false,
-						error: getError(error),
-					});
-				}
-			});
+		(fileNames as string[]).forEach((item) => {
+			db.processFile(tableName, item);
 		});
 
-		const results = await Promise.all(promisesArr);
+		res.status(200).json({
+			code: 200,
+			message: '文件处理中...',
+		});
 
-		if (results.some((item) => !item.status)) {
-			res.status(207).json({
-				// 207 Multi-Status 表示部分请求成功
-				code: 207,
-				data: results,
-				message: '部分文件处理失败',
-			});
-		} else {
-			res.status(200).json({
-				code: 200,
-				data: results,
-				message: '所有文件处理成功',
-			});
-		}
+		// const promisesArr = (fileNames as string[]).map((fileName) => {
+		// 	return new Promise<{ fileName: string; status: boolean; error?: string }>(async (resolve) => {
+		// 		try {
+		// 			await db.insertFile(tableName, fileName);
+		// 			resolve({ fileName, status: true });
+		// 		} catch (error) {
+		// 			console.error(`Error embedding file ${fileName}:`, error);
+		// 			resolve({
+		// 				fileName,
+		// 				status: false,
+		// 				error: getError(error),
+		// 			});
+		// 		}
+		// 	});
+		// });
+
+		// const results = await Promise.all(promisesArr);
+
+		// if (results.some((item) => !item.status)) {
+		// 	res.status(207).json({
+		// 		// 207 Multi-Status 表示部分请求成功
+		// 		code: 207,
+		// 		data: results,
+		// 		message: '部分文件处理失败',
+		// 	});
+		// } else {
+		// 	res.status(200).json({
+		// 		code: 200,
+		// 		data: results,
+		// 		message: '所有文件处理成功',
+		// 	});
+		// }
 	})
 );
 
