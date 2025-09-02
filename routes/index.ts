@@ -771,6 +771,7 @@ router.post('/rentFileParse', async (req, res) => {
 			code: 200,
 			data: '已检测到文件,开始执行OCR任务',
 		});
+
 		fileParse(filename)
 			.then(async (content) => {
 				const fileData = await fs.readFile(rentJsonPath, 'utf-8');

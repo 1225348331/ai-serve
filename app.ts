@@ -6,6 +6,7 @@ import logger from 'morgan';
 import indexRouter from './routes/index';
 import usersRouter from './routes/users';
 import knowledgeRouter from './routes/knowledge';
+import aiRouter from './routes/ai';
 import type { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 
@@ -26,6 +27,7 @@ app.use(cors());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/knowledge', knowledgeRouter);
+app.use('/ai', aiRouter);
 
 // catch 404 and forward to error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

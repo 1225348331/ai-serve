@@ -3,10 +3,10 @@
 /**
  * Module dependencies.
  */
-
 import app from '../app';
 import debug from 'debug';
 import http from 'http';
+import { setupWebSocket } from './websocket';
 
 const debugLog = debug('express-ts:server');
 
@@ -22,6 +22,8 @@ app.set('port', port);
 
 const server = http.createServer(app);
 
+setupWebSocket(server);
+
 /**
  * Listen on provided port, on all network interfaces.
  */
@@ -35,19 +37,19 @@ server.on('listening', onListening);
  */
 
 function normalizePort(val: string): number | string | false {
-  const port = parseInt(val, 10);
+	const port = parseInt(val, 10);
 
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
+	if (isNaN(port)) {
+		// named pipe
+		return val;
+	}
 
-  if (port >= 0) {
-    // port number
-    return port;
-  }
+	if (port >= 0) {
+		// port number
+		return port;
+	}
 
-  return false;
+	return false;
 }
 
 /**
@@ -55,27 +57,25 @@ function normalizePort(val: string): number | string | false {
  */
 
 function onError(error: NodeJS.ErrnoException): void {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
+	if (error.syscall !== 'listen') {
+		throw error;
+	}
 
-  const bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+	const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
 
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
+	// handle specific listen errors with friendly messages
+	switch (error.code) {
+		case 'EACCES':
+			console.error(bind + ' requires elevated privileges');
+			process.exit(1);
+			break;
+		case 'EADDRINUSE':
+			console.error(bind + ' is already in use');
+			process.exit(1);
+			break;
+		default:
+			throw error;
+	}
 }
 
 /**
@@ -83,12 +83,9 @@ function onError(error: NodeJS.ErrnoException): void {
  */
 
 function onListening(): void {
-  const addr = server.address();
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + (addr?.port || '');
-  console.log('Listening on http://localhost:' + port);
-  // console.log(1)
-  // debugLog('Listening on ' + bind);
+	const addr = server.address();
+	const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + (addr?.port || '');
+	console.log('Listening on http://localhost:' + port);
+	// console.log(1)
+	// debugLog('Listening on ' + bind);
 }
-

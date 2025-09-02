@@ -89,3 +89,46 @@ export const getReasonLLM = (
 		temperature: config.temperature,
 	});
 };
+
+// 获取本地大模型
+export const getLocalLLm = () => {
+	// 基础配置
+	let config: LLMConfig = {
+		model: 'ds70b',
+		baseURL: 'http://2.45.189.251:2025/v1',
+		apiKey: '8e1bf446-de08-422c-8168-a38781acbfec',
+		temperature: 0.6,
+	};
+
+	return new ChatOpenAI({
+		model: config.model,
+		configuration: {
+			baseURL: config.baseURL,
+			apiKey: config.apiKey,
+		},
+		streamUsage: true,
+		temperature: config.temperature,
+	});
+};
+
+// 获取本地视觉大模型
+export const getLocalVisionLLm = (params: Partial<LLMConfig>) => {
+	let config: LLMConfig = {
+		model: 'qwen25vl',
+		baseURL: 'http://2.45.189.251:1025/v1',
+		apiKey: '8e1bf446-de08-422c-8168-a38781acbfec',
+		temperature: 0.6,
+	};
+
+	config = { ...config, ...params };
+
+	return new ChatOpenAI({
+		model: config.model,
+		configuration: {
+			baseURL: config.baseURL,
+			apiKey: config.apiKey,
+		},
+		streamUsage: true,
+		temperature: config.temperature,
+	});
+};
