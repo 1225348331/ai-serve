@@ -5,6 +5,7 @@ import fs from 'fs/promises';
 import { fileParse } from '../utils/AI/FileParse';
 import destr from 'destr';
 import path from 'path';
+import { db } from '../routes/knowledge';
 
 const rentJsonPath = path.join(__dirname, '../routes/rent.json');
 
@@ -35,30 +36,40 @@ export function setupWebSocket(server: Server) {
 		});
 
 		ws.on('message', async (data) => {
-			const { filename, clientId: messageClientId } = destr<{ filename: string; clientId?: string }>(data.toString());
+			const {
+				filename,
+				clientId: messageClientId,
+				type,
+				tableName,
+			} = destr<{ filename: string; clientId: string; type: string; tableName?: string }>(data.toString());
 			try {
 				const targetClientId = messageClientId || clientId;
 
 				console.log(`收到文件解析请求: ${filename} from ${targetClientId}`);
 
-				const content = await fileParse(filename);
+				// 如果是知识库解析
+				if (tableName) {
+					await db.insertFile(tableName, filename);
+				} else {
+					const content = await fileParse(filename);
 
-				// 更新rent.json文件
-				const fileData = await fs.readFile(rentJsonPath, 'utf-8');
-				const rentData = destr(fileData) as { filename: string; content: string }[];
+					// 更新rent.json文件
+					const fileData = await fs.readFile(rentJsonPath, 'utf-8');
+					const rentData = destr(fileData) as { filename: string; content: string }[];
 
-				rentData.forEach((item) => {
-					if (item.filename === filename) {
-						item.content = content;
-					}
-				});
+					rentData.forEach((item) => {
+						if (item.filename === filename) {
+							item.content = content;
+						}
+					});
 
-				await fs.writeFile(rentJsonPath, JSON.stringify(rentData, null, 2), 'utf8');
+					await fs.writeFile(rentJsonPath, JSON.stringify(rentData, null, 2), 'utf8');
+				}
 
 				// 查找目标客户端并发送消息
 				const client = clients.get(targetClientId);
 				if (client) {
-					client.ws.send(JSON.stringify(`${filename}: 解析成功`));
+					client.ws.send(JSON.stringify(`${type}/${filename}: 解析成功`));
 				} else {
 					console.warn(`客户端 ${targetClientId} 已断开，无法发送消息`);
 				}
@@ -80,7 +91,7 @@ export function setupWebSocket(server: Server) {
 				// 发送错误消息
 				const client = clients.get(clientId);
 				if (client) {
-					client.ws.send(`${filename}:解析失败，请重新尝试`);
+					client.ws.send(`${type}/${filename}:解析失败，请重新尝试`);
 				}
 			}
 		});

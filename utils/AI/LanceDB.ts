@@ -125,9 +125,11 @@ export class VectorDB {
 		try {
 			const embeddings = await embeddingTool.embeddingFile(fileName);
 			await this.insertVector(tableName, embeddings as IChunkVectorData[]);
-			// if (this.processFiles.includes(fileName)) {
-			// 	this.processFiles = this.processFiles.filter((item) => item != fileName);
-			// }
+			let processFiles = this.processFiles.get(tableName);
+			if (processFiles?.length && processFiles.includes(fileName)) {
+				processFiles = processFiles.filter((item) => item != fileName);
+				this.processFiles.set(tableName, processFiles);
+			}
 			console.log(fileName, '嵌入成功');
 		} catch (error) {
 			throw new Error(`嵌入文件 ${fileName} 失败: ${error instanceof Error ? error.message : String(error)}`);
@@ -139,10 +141,20 @@ export class VectorDB {
 			if (!this.db) this.db = await this.initdb();
 			this.table = await this.db.openTable(tableName);
 			const fileName = await this.table.query().select(['file_name']).toArray();
-			let uniqueFilenames = [...new Set(fileName.map((row) => row.file_name))];
-			const files = this.processFiles.get(tableName);
-			if (files) uniqueFilenames = uniqueFilenames.concat(...files);
-			return uniqueFilenames;
+			let uniqueFilenames = [...new Set(fileName.map((row) => row.file_name))].map((item) => {
+				return {
+					filename: item,
+					status: 'success',
+				};
+			});
+			const processfiles = (this.processFiles.get(tableName) || []).map((item) => {
+				return {
+					filename: item,
+					status: 'waiting',
+				};
+			});
+
+			return uniqueFilenames.concat(processfiles);
 		} catch (error) {
 			throw new Error(`查询文件列表失败: ${error instanceof Error ? error.message : String(error)}`);
 		}

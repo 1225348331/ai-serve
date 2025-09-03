@@ -10,7 +10,7 @@ import { fileParse } from '../utils/AI/FileParse';
 
 const router = express.Router();
 
-const db = new VectorDB();
+export const db = new VectorDB();
 
 // 统一错误处理中间件
 const asyncHandler =
@@ -153,7 +153,14 @@ router.get(
 			});
 		}
 
-		await db.deleteFile(tableName as string, fileName as string);
+		if (db.processFiles.get(tableName as string)?.includes(fileName as string)) {
+			let files = db.processFiles.get(tableName as string) || [];
+			files = files.filter((item) => item != fileName);
+			db.processFiles.set(tableName as string, files);
+		} else {
+			await db.deleteFile(tableName as string, fileName as string);
+		}
+
 		res.status(200).json({
 			code: 200,
 			data: '删除成功',
